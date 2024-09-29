@@ -5,11 +5,13 @@ class LoginScreen extends StatelessWidget {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
 
+  LoginScreen({Key? key}) : super(key: key); // Constructor with Key
+
   // Function to handle user sign-in
   Future<void> _signInWithEmailAndPassword(BuildContext context) async {
     try {
-      final FirebaseAuth _auth = FirebaseAuth.instance;
-      UserCredential userCredential = await _auth.signInWithEmailAndPassword(
+      final FirebaseAuth auth = FirebaseAuth.instance;
+      UserCredential userCredential = await auth.signInWithEmailAndPassword(
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
       );
@@ -26,8 +28,8 @@ class LoginScreen extends StatelessWidget {
   // Function to handle user registration
   Future<void> _createUserWithEmailAndPassword(BuildContext context) async {
     try {
-      final FirebaseAuth _auth = FirebaseAuth.instance;
-      UserCredential userCredential = await _auth.createUserWithEmailAndPassword(
+      final FirebaseAuth auth = FirebaseAuth.instance;
+      UserCredential userCredential = await auth.createUserWithEmailAndPassword(
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
       );
@@ -53,7 +55,7 @@ class LoginScreen extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: <Widget>[
-                Text(
+                const Text(
                   'Login',
                   style: TextStyle(
                     fontSize: 28,
@@ -61,36 +63,36 @@ class LoginScreen extends StatelessWidget {
                   ),
                   textAlign: TextAlign.center,
                 ),
-                SizedBox(height: 50),
+                const SizedBox(height: 50),
                 TextField(
                   controller: _emailController,
                   keyboardType: TextInputType.emailAddress,
                   decoration: InputDecoration(
                     hintText: 'Email or Username',
-                    contentPadding: EdgeInsets.symmetric(vertical: 20, horizontal: 20),
+                    contentPadding: const EdgeInsets.symmetric(vertical: 20, horizontal: 20),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12.0),
                     ),
                   ),
                 ),
-                SizedBox(height: 20),
+                const SizedBox(height: 20),
                 TextField(
                   controller: _passwordController,
                   obscureText: true,
                   decoration: InputDecoration(
                     hintText: 'Password',
-                    contentPadding: EdgeInsets.symmetric(vertical: 20, horizontal: 20),
+                    contentPadding: const EdgeInsets.symmetric(vertical: 20, horizontal: 20),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12.0),
                     ),
                   ),
                 ),
-                SizedBox(height: 30),
+                const SizedBox(height: 30),
                 SizedBox(
                   height: 50,
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Color(0xFFFFBD4A),
+                      backgroundColor: const Color(0xFFFFBD4A),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8.0),
                       ),
@@ -98,7 +100,7 @@ class LoginScreen extends StatelessWidget {
                     onPressed: () {
                       _signInWithEmailAndPassword(context);
                     },
-                    child: Text(
+                    child: const Text(
                       'Sign In',
                       style: TextStyle(
                         color: Colors.white,
@@ -108,8 +110,8 @@ class LoginScreen extends StatelessWidget {
                     ),
                   ),
                 ),
-                SizedBox(height: 15),
-                Text(
+                const SizedBox(height: 15),
+                const Text(
                   "Don't Have An Account?",
                   textAlign: TextAlign.center,
                 ),
@@ -118,7 +120,7 @@ class LoginScreen extends StatelessWidget {
                     // Call the create user function here
                     _createUserWithEmailAndPassword(context);
                   },
-                  child: Text(
+                  child: const Text(
                     'Sign Up',
                     style: TextStyle(
                       fontSize: 14,
@@ -126,12 +128,12 @@ class LoginScreen extends StatelessWidget {
                     ),
                   ),
                 ),
-                SizedBox(height: 15),
-                Text(
+                const SizedBox(height: 15),
+                const Text(
                   'OR',
                   textAlign: TextAlign.center,
                 ),
-                SizedBox(height: 15),
+                const SizedBox(height: 15),
                 SizedBox(
                   height: 50,
                   child: OutlinedButton.icon(
@@ -140,7 +142,7 @@ class LoginScreen extends StatelessWidget {
                       height: 24,
                       width: 24,
                     ),
-                    label: Text(
+                    label: const Text(
                       'Login with Google',
                       style: TextStyle(
                         fontSize: 16,
@@ -148,11 +150,11 @@ class LoginScreen extends StatelessWidget {
                       ),
                     ),
                     style: OutlinedButton.styleFrom(
-                      padding: EdgeInsets.symmetric(vertical: 15, horizontal: 15),
+                      padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 15),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8.0),
                       ),
-                      side: BorderSide(color: Colors.grey),
+                      side: const BorderSide(color: Colors.grey),
                     ),
                     onPressed: () {
                       // Placeholder for Google Sign-In logic

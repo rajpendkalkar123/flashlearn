@@ -1,25 +1,32 @@
 import 'package:flutter/material.dart';
 
 class HomeScreen extends StatelessWidget {
+  const HomeScreen({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked, // Centered button in the bottom navigation bar
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          Navigator.pushNamed(context, 'createFlashcard');
-        },
-        child: Icon(Icons.add),
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.amber,
-        elevation: 12,
-        shape: CircleBorder(
-          side: BorderSide(color: Colors.amber, width: 8.0, style: BorderStyle.solid),
+      floatingActionButton: SizedBox(
+        width: 80,
+        height: 80,
+        child: FloatingActionButton(
+          onPressed: () {
+            _showCreateFlashcardBottomSheet(context); // Show bottom sheet when button is pressed
+          },
+          backgroundColor: Colors.amber,
+          foregroundColor: Colors.white,
+          elevation: 12,
+          shape: const CircleBorder(
+            side: BorderSide(color: Colors.white, width: 10.0, style: BorderStyle.solid),
+          ),
+          child: const Icon(Icons.add),
         ),
       ),
       bottomNavigationBar: BottomAppBar(
-        shape: CircularNotchedRectangle(), // For the notch to house the floating button
+        shape: const CircularNotchedRectangle(), // For the notch to house the floating button
         notchMargin: 10,
+        color: Colors.white,
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
           child: Row(
@@ -29,22 +36,21 @@ class HomeScreen extends StatelessWidget {
                 onPressed: () {
                   Navigator.pushNamed(context, 'home');
                 },
-                icon: Icon(Icons.home, color: Colors.amber),
+                icon: const SizedBox(child: Icon(Icons.home, color: Colors.amber)),
               ),
               IconButton(
                 onPressed: () {
                   Navigator.pushNamed(context, 'profile');
                 },
-                icon: Icon(Icons.person, color: Colors.amber),
+                icon: const Icon(Icons.person, color: Colors.amber),
               ),
             ],
           ),
         ),
-        color: Colors.white,
       ),
       appBar: AppBar(
         backgroundColor: Colors.amber,
-        title: Text(
+        title: const Text(
           'Flashlearn',
           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 30, color: Colors.white),
         ),
@@ -53,7 +59,7 @@ class HomeScreen extends StatelessWidget {
             onPressed: () {
               Navigator.pushNamed(context, 'profile');
             },
-            icon: Icon(Icons.notifications, color: Colors.white),
+            icon: const Icon(Icons.notifications, color: Colors.white),
           ),
         ],
       ),
@@ -76,7 +82,7 @@ class HomeScreen extends StatelessWidget {
                 ],
               ),
               child: TextFormField(
-                decoration: InputDecoration(
+                decoration: const InputDecoration(
                   border: InputBorder.none,
                   hintText: "Search Flashcards",
                   hintStyle: TextStyle(color: Colors.amber, fontSize: 18),
@@ -91,10 +97,10 @@ class HomeScreen extends StatelessWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('Flashcard Categories', style: TextStyle(fontSize: 20, color: Colors.amber)),
+                const Text('Flashcard Categories', style: TextStyle(fontSize: 20, color: Colors.amber)),
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(backgroundColor: Colors.amber),
-                  child: Text("View All", style: TextStyle(fontSize: 16, color: Colors.white)),
+                  child: const Text("View All", style: TextStyle(fontSize: 16, color: Colors.white)),
                   onPressed: () {
                     // View all action
                   },
@@ -104,7 +110,7 @@ class HomeScreen extends StatelessWidget {
           ),
           Expanded(
             child: GridView.count(
-              padding: EdgeInsets.all(16),
+              padding: const EdgeInsets.all(16),
               crossAxisCount: 3,
               crossAxisSpacing: 10,
               mainAxisSpacing: 10,
@@ -126,6 +132,85 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
+  // Show bottom sheet for flashcard creation options
+  void _showCreateFlashcardBottomSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(25.0)),
+      ),
+      builder: (BuildContext context) {
+        return Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const Text('Create Flashcard', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 20),
+              ListTile(
+                leading: const Icon(Icons.create, color: Colors.amber),
+                title: const Text('Create Flashcard Manually'),
+                onTap: () {
+                  Navigator.pop(context); // Close the bottom sheet
+                  _showFlashcardTypeBottomSheet(context); // Show next bottom sheet
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.flash_on, color: Colors.amber),
+                title: const Text('Use AI to Create Flashcard'),
+                onTap: () {
+                  Navigator.pop(context); // Close the bottom sheet
+                  // Show AI flashcard creation if needed
+                },
+              ),
+              const SizedBox(height: 10),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  // Show another bottom sheet for choosing between creating a flashcard set or quiz
+  void _showFlashcardTypeBottomSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(25.0)),
+      ),
+      builder: (BuildContext context) {
+        return Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const Text('Choose Type', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 20),
+              ListTile(
+                leading: const Icon(Icons.library_books, color: Colors.amber),
+                title: const Text('Create Flashcard Set'),
+                onTap: () {
+                  Navigator.pop(context); // Close the bottom sheet
+                  Navigator.pushNamed(context, 'manualFlashcardSet'); // Navigate to manual flashcard set screen
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.quiz, color: Colors.amber),
+                title: const Text('Create Quiz'),
+                onTap: () {
+                  Navigator.pop(context); // Close the bottom sheet
+                  Navigator.pushNamed(context, 'manualQuiz'); // Navigate to manual quiz screen
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   Widget _buildCategoryCard(IconData icon, String title, BuildContext context) {
     return InkWell(
       onTap: () {
@@ -138,7 +223,7 @@ class HomeScreen extends StatelessWidget {
           boxShadow: [
             BoxShadow(
               color: Colors.grey.shade300,
-              offset: Offset(4, 4),
+              offset: const Offset(4, 4),
               blurRadius: 8,
             ),
           ],
@@ -147,10 +232,10 @@ class HomeScreen extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(icon, size: 40, color: Colors.white),
-            SizedBox(height: 10),
+            const SizedBox(height: 10),
             Text(
               title,
-              style: TextStyle(fontSize: 16, color: Colors.white),
+              style: const TextStyle(fontSize: 16, color: Colors.white),
               textAlign: TextAlign.center,
             ),
           ],
