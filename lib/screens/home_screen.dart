@@ -1,18 +1,62 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'category_flashcards_screen.dart'; // Ensure this file exists to handle category selections
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
+
+  @override
+  _HomeScreenState createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  final TextEditingController _searchController = TextEditingController();
+  List<String> _flashcards = [];
+  List<String> _filteredFlashcards = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchFlashcards();
+    _searchController.addListener(_onSearchChanged);
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  // Fetch flashcards from Firestore
+  Future<void> _fetchFlashcards() async {
+    final QuerySnapshot snapshot = await FirebaseFirestore.instance.collection('flashcards').get();
+    setState(() {
+      _flashcards = snapshot.docs.map((doc) {
+        // Make sure the fields 'term' and 'setTitle' are being fetched
+        var data = doc.data() as Map<String, dynamic>; // Cast data to Map<String, dynamic>
+        return data['setTitle'] ?? 'No Title'; // Ensure you have a fallback
+      }).toList().cast<String>(); // Cast to List<String>
+    });
+  }
+
+  // Handle search input changes
+  void _onSearchChanged() {
+    final query = _searchController.text.toLowerCase();
+    setState(() {
+      _filteredFlashcards = _flashcards.where((flashcard) => flashcard.toLowerCase().contains(query)).toList();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked, // Centered button in the bottom navigation bar
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       floatingActionButton: SizedBox(
         width: 80,
         height: 80,
         child: FloatingActionButton(
           onPressed: () {
-            _showCreateFlashcardBottomSheet(context); // Show bottom sheet when button is pressed
+            _showCreateFlashcardBottomSheet(context);
           },
           backgroundColor: Colors.amber,
           foregroundColor: Colors.white,
@@ -24,7 +68,7 @@ class HomeScreen extends StatelessWidget {
         ),
       ),
       bottomNavigationBar: BottomAppBar(
-        shape: const CircularNotchedRectangle(), // For the notch to house the floating button
+        shape: const CircularNotchedRectangle(),
         notchMargin: 10,
         color: Colors.white,
         child: Padding(
@@ -34,13 +78,19 @@ class HomeScreen extends StatelessWidget {
             children: [
               IconButton(
                 onPressed: () {
-                  Navigator.pushNamed(context, 'home');
+                  // Do nothing if already on home screen
+                  if (ModalRoute.of(context)?.settings.name != 'home') {
+                    Navigator.pushReplacementNamed(context, 'home');
+                  }
                 },
-                icon: const SizedBox(child: Icon(Icons.home, color: Colors.amber)),
+                icon: const Icon(Icons.home, color: Colors.amber),
               ),
               IconButton(
                 onPressed: () {
-                  Navigator.pushNamed(context, 'profile');
+                  // Do nothing if already on profile screen
+                  if (ModalRoute.of(context)?.settings.name != 'profile') {
+                    Navigator.pushNamed(context,'profile');
+                  }
                 },
                 icon: const Icon(Icons.person, color: Colors.amber),
               ),
@@ -57,7 +107,7 @@ class HomeScreen extends StatelessWidget {
         actions: [
           IconButton(
             onPressed: () {
-              Navigator.pushNamed(context, 'profile');
+              Navigator.pushReplacementNamed(context, 'profile');
             },
             icon: const Icon(Icons.notifications, color: Colors.white),
           ),
@@ -82,6 +132,7 @@ class HomeScreen extends StatelessWidget {
                 ],
               ),
               child: TextFormField(
+                controller: _searchController,
                 decoration: const InputDecoration(
                   border: InputBorder.none,
                   hintText: "Search Flashcards",
@@ -92,6 +143,31 @@ class HomeScreen extends StatelessWidget {
               ),
             ),
           ),
+          if (_searchController.text.isNotEmpty && _filteredFlashcards.isNotEmpty)
+            Expanded(
+              child: ListView.builder(
+                itemCount: _filteredFlashcards.length,
+                itemBuilder: (context, index) {
+                  return ListTile(
+                    title: Text(_filteredFlashcards[index]),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => CategoryFlashcardsScreen(category: _filteredFlashcards[index]),
+                        ),
+                      );
+                    },
+                  );
+                },
+              ),
+            )
+          else if (_searchController.text.isNotEmpty)
+            const Expanded(
+              child: Center(
+                child: Text("No flashcards found", style: TextStyle(color: Colors.amber)),
+              ),
+            ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
             child: Row(
@@ -102,7 +178,7 @@ class HomeScreen extends StatelessWidget {
                   style: ElevatedButton.styleFrom(backgroundColor: Colors.amber),
                   child: const Text("View All", style: TextStyle(fontSize: 16, color: Colors.white)),
                   onPressed: () {
-                    // View all action
+                    // Implement action to view all categories
                   },
                 ),
               ],
@@ -132,7 +208,7 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  // Show bottom sheet for flashcard creation options
+  // Show first bottom sheet to choose between AI or Manual creation
   void _showCreateFlashcardBottomSheet(BuildContext context) {
     showModalBottomSheet(
       context: context,
@@ -146,22 +222,22 @@ class HomeScreen extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const Text('Create Flashcard', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+              const Text('Create Flashcard or Quiz', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
               const SizedBox(height: 20),
               ListTile(
                 leading: const Icon(Icons.create, color: Colors.amber),
-                title: const Text('Create Flashcard Manually'),
+                title: const Text('Create Manually'),
                 onTap: () {
-                  Navigator.pop(context); // Close the bottom sheet
-                  _showFlashcardTypeBottomSheet(context); // Show next bottom sheet
+                  Navigator.pop(context); // Close the current bottom sheet
+                  _showFlashcardOrQuizBottomSheet(context, true); // Show next bottom sheet for manual creation
                 },
               ),
               ListTile(
                 leading: const Icon(Icons.flash_on, color: Colors.amber),
-                title: const Text('Use AI to Create Flashcard'),
+                title: const Text('Use AI to Create'),
                 onTap: () {
-                  Navigator.pop(context); // Close the bottom sheet
-                  // Show AI flashcard creation if needed
+                  Navigator.pop(context); // Close the current bottom sheet
+                  _showFlashcardOrQuizBottomSheet(context, false); // Show next bottom sheet for AI creation
                 },
               ),
               const SizedBox(height: 10),
@@ -172,8 +248,8 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  // Show another bottom sheet for choosing between creating a flashcard set or quiz
-  void _showFlashcardTypeBottomSheet(BuildContext context) {
+  // Show second bottom sheet to choose between flashcard or quiz
+  void _showFlashcardOrQuizBottomSheet(BuildContext context, bool isManual) {
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(
@@ -186,24 +262,25 @@ class HomeScreen extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const Text('Choose Type', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+              const Text('Choose Creation Type', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
               const SizedBox(height: 20),
               ListTile(
-                leading: const Icon(Icons.library_books, color: Colors.amber),
-                title: const Text('Create Flashcard Set'),
+                leading: const Icon(Icons.note_add, color: Colors.amber),
+                title: const Text('Create Flashcard'),
                 onTap: () {
-                  Navigator.pop(context); // Close the bottom sheet
-                  Navigator.pushNamed(context, 'manualFlashcardSet'); // Navigate to manual flashcard set screen
+                  Navigator.pop(context); // Close bottom sheet
+                  Navigator.pushNamed(context, isManual ? 'manualFlashcardSet' : 'aiFlashcardCreation'); // Navigate to respective screen
                 },
               ),
               ListTile(
                 leading: const Icon(Icons.quiz, color: Colors.amber),
                 title: const Text('Create Quiz'),
                 onTap: () {
-                  Navigator.pop(context); // Close the bottom sheet
-                  Navigator.pushNamed(context, 'manualQuiz'); // Navigate to manual quiz screen
+                  Navigator.pop(context); // Close bottom sheet
+                  Navigator.pushNamed(context, isManual ? 'manualQuizSet' : 'aiQuizCreation'); // Navigate to respective screen
                 },
               ),
+              const SizedBox(height: 10),
             ],
           ),
         );
@@ -214,7 +291,12 @@ class HomeScreen extends StatelessWidget {
   Widget _buildCategoryCard(IconData icon, String title, BuildContext context) {
     return InkWell(
       onTap: () {
-        print(title);
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => CategoryFlashcardsScreen(category: title), // Pass the selected category
+          ),
+        );
       },
       child: Container(
         decoration: BoxDecoration(

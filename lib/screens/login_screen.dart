@@ -1,24 +1,33 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart'; // Import for FirebaseAuth
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:google_sign_in/google_sign_in.dart'; // Google Sign-In dependency
 
 class LoginScreen extends StatelessWidget {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
 
-  LoginScreen({Key? key}) : super(key: key); // Constructor with Key
+  LoginScreen({super.key});
 
   // Function to handle user sign-in
   Future<void> _signInWithEmailAndPassword(BuildContext context) async {
+    final String email = _emailController.text.trim();
+    final String password = _passwordController.text.trim();
+
+    if (email.isEmpty || password.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please fill in both email and password')),
+      );
+      return;
+    }
+
     try {
       final FirebaseAuth auth = FirebaseAuth.instance;
-      UserCredential userCredential = await auth.signInWithEmailAndPassword(
-        email: _emailController.text.trim(),
-        password: _passwordController.text.trim(),
+      await auth.signInWithEmailAndPassword(
+        email: email,
+        password: password,
       );
-      // On successful login, navigate to Home Screen
-      Navigator.pushReplacementNamed(context, 'home');
+      Navigator.pushReplacementNamed(context, 'home'); // Navigate to home screen on success
     } catch (e) {
-      // Show error message
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error: ${e.toString()}')),
       );
@@ -27,18 +36,51 @@ class LoginScreen extends StatelessWidget {
 
   // Function to handle user registration
   Future<void> _createUserWithEmailAndPassword(BuildContext context) async {
+    final String email = _emailController.text.trim();
+    final String password = _passwordController.text.trim();
+
+    if (email.isEmpty || password.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please fill in both email and password')),
+      );
+      return;
+    }
+
     try {
       final FirebaseAuth auth = FirebaseAuth.instance;
-      UserCredential userCredential = await auth.createUserWithEmailAndPassword(
-        email: _emailController.text.trim(),
-        password: _passwordController.text.trim(),
+      await auth.createUserWithEmailAndPassword(
+        email: email,
+        password: password,
       );
-      // On successful registration, navigate to Home Screen
-      Navigator.pushReplacementNamed(context, 'home');
+      Navigator.pushReplacementNamed(context, 'home'); // Navigate to home screen on success
     } catch (e) {
-      // Show error message
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error: ${e.toString()}')),
+      );
+    }
+  }
+
+  // Function to handle Google Sign-In
+  Future<void> _signInWithGoogle(BuildContext context) async {
+    try {
+      final GoogleSignIn googleSignIn = GoogleSignIn();
+      final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
+
+      if (googleUser == null) {
+        return; // User canceled the Google Sign-In process
+      }
+
+      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+      final AuthCredential credential = GoogleAuthProvider.credential(
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
+      );
+
+      await FirebaseAuth.instance.signInWithCredential(credential);
+      Navigator.pushReplacementNamed(context, 'home'); // Navigate to home screen on success
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Google Sign-In Error: ${e.toString()}')),
       );
     }
   }
@@ -68,7 +110,7 @@ class LoginScreen extends StatelessWidget {
                   controller: _emailController,
                   keyboardType: TextInputType.emailAddress,
                   decoration: InputDecoration(
-                    hintText: 'Email or Username',
+                    hintText: 'Email',
                     contentPadding: const EdgeInsets.symmetric(vertical: 20, horizontal: 20),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12.0),
@@ -98,7 +140,7 @@ class LoginScreen extends StatelessWidget {
                       ),
                     ),
                     onPressed: () {
-                      _signInWithEmailAndPassword(context);
+                      _signInWithEmailAndPassword(context); // Call method
                     },
                     child: const Text(
                       'Sign In',
@@ -117,8 +159,7 @@ class LoginScreen extends StatelessWidget {
                 ),
                 TextButton(
                   onPressed: () {
-                    // Call the create user function here
-                    _createUserWithEmailAndPassword(context);
+                    _createUserWithEmailAndPassword(context); // Call method
                   },
                   child: const Text(
                     'Sign Up',
@@ -157,7 +198,7 @@ class LoginScreen extends StatelessWidget {
                       side: const BorderSide(color: Colors.grey),
                     ),
                     onPressed: () {
-                      // Placeholder for Google Sign-In logic
+                      _signInWithGoogle(context); // Call method
                     },
                   ),
                 ),

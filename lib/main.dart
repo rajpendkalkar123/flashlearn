@@ -1,20 +1,25 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart'; // Import for FirebaseAuth
-import 'package:firebase_core/firebase_core.dart'; // Import for Firebase Core
-import 'screens/login_screen.dart'; // Import for LoginScreen
-import 'screens/home_screen.dart'; // Import for HomeScreen
-import 'screens/create_flashcard_screen.dart'; // Import for CreateFlashcardScreen
-import 'screens/manual_quiz_screen.dart';  // Add this line
-import 'screens/manual_flashcard_set_screen.dart';  // Add this line
-
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'screens/login_screen.dart';
+import 'screens/home_screen.dart';
+import 'screens/create_flashcards_screen.dart';
+import 'screens/manual_quiz_screen.dart';
+import 'screens/manual_flashcard_set_screen.dart';
+import 'screens/profile_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(); // Initialize Firebase
 
-  // Check if the user is already logged in
+  try {
+    await Firebase.initializeApp(); // Initialize Firebase
+  } catch (e) {
+    runApp(const MyApp(defaultHome: ErrorScreen()));
+    return; // Stop execution if Firebase fails to initialize
+  }
+
   FirebaseAuth auth = FirebaseAuth.instance;
-  Widget defaultHome = auth.currentUser != null ? HomeScreen() : LoginScreen(); // Determine the default home
+  Widget defaultHome = auth.currentUser != null ? const HomeScreen() : LoginScreen();
 
   runApp(MyApp(defaultHome: defaultHome));
 }
@@ -22,7 +27,7 @@ void main() async {
 class MyApp extends StatelessWidget {
   final Widget defaultHome;
 
-  MyApp({required this.defaultHome}); // Constructor for default home
+  const MyApp({super.key, required this.defaultHome});
 
   @override
   Widget build(BuildContext context) {
@@ -30,15 +35,34 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'Flashlearn',
       theme: ThemeData(primarySwatch: Colors.amber),
-      home: defaultHome, // Set the home screen here
+      home: defaultHome,
       routes: {
-        'home': (context) => HomeScreen(),
-        'createFlashcard': (context) => CreateFlashcardScreen(), // Define create flashcard route
-        'manualFlashcardSet': (context) => ManualFlashcardSetScreen(),
-        'manualQuiz': (context) => ManualQuizScreen(),
-
-        // No need to define the root route (/) since home is already specified
+        'home': (context) => const HomeScreen(),
+        'createFlashcard': (context) => const CreateFlashcardScreen(),
+        'manualFlashcardSet': (context) => const ManualFlashcardSetScreen(),
+        'manualQuiz': (context) => const ManualQuizScreen(),
+        'profile': (context) =>  ProfileScreen(),
+        'manualQuizSet': (context) => const ManualQuizScreen(),
       },
+    );
+  }
+}
+
+// Error Screen to show if Firebase fails to initialize
+class ErrorScreen extends StatelessWidget {
+  const ErrorScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Error')),
+      body: const Center(
+        child: Text(
+          'Failed to initialize Firebase. Please try again later.',
+          textAlign: TextAlign.center,
+          style: TextStyle(fontSize: 18),
+        ),
+      ),
     );
   }
 }

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 class CreateFlashcardScreen extends StatefulWidget {
+  const CreateFlashcardScreen({super.key});
+
   @override
   _CreateFlashcardScreenState createState() => _CreateFlashcardScreenState();
 }
@@ -9,7 +11,7 @@ class _CreateFlashcardScreenState extends State<CreateFlashcardScreen> {
   void _showFlashcardOptionsPopup() {
     showModalBottomSheet(
       context: context,
-      shape: RoundedRectangleBorder(
+      shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20.0)),
       ),
       builder: (context) {
@@ -36,13 +38,13 @@ class _CreateFlashcardScreenState extends State<CreateFlashcardScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Create Flashcard'),
+        title: const Text('Create Flashcard'),
         backgroundColor: Colors.amber,
       ),
       body: Center(
         child: ElevatedButton(
           onPressed: _showFlashcardOptionsPopup,
-          child: Text('Show Flashcard Options'),
+          child: const Text('Show Flashcard Options'),
         ),
       ),
     );
@@ -52,38 +54,38 @@ class _CreateFlashcardScreenState extends State<CreateFlashcardScreen> {
 class FlashcardOptionsPopup extends StatelessWidget {
   final Function(String) onOptionSelected;
 
-  FlashcardOptionsPopup({required this.onOptionSelected});
+  const FlashcardOptionsPopup({super.key, required this.onOptionSelected});
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: EdgeInsets.all(16),
+      padding: const EdgeInsets.all(16),
       height: 350,
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       child: Column(
         children: [
-          Text('Create Flashcards', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+          const Text('Create Flashcards', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
           ListTile(
-            leading: Icon(Icons.document_scanner),
-            title: Text('Scan Document ✨AI'),
+            leading: const Icon(Icons.document_scanner),
+            title: const Text('Scan Document ✨AI'),
             onTap: () => onOptionSelected('scanDocument'),
           ),
           ListTile(
-            leading: Icon(Icons.image),
-            title: Text('Select Images ✨AI'),
+            leading: const Icon(Icons.image),
+            title: const Text('Select Images ✨AI'),
             onTap: () => onOptionSelected('selectImages'),
           ),
           ListTile(
-            leading: Icon(Icons.paste),
-            title: Text('Paste Text ✨AI'),
+            leading: const Icon(Icons.paste),
+            title: const Text('Paste Text ✨AI'),
             onTap: () => onOptionSelected('pasteText'),
           ),
           ListTile(
-            leading: Icon(Icons.create),
-            title: Text('Create Manually'),
+            leading: const Icon(Icons.create),
+            title: const Text('Create Manually'),
             onTap: () => onOptionSelected('manual'),
           ),
         ],

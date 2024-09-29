@@ -3,6 +3,8 @@ import 'package:cloud_firestore/cloud_firestore.dart'; // Import Firestore
 import 'package:firebase_auth/firebase_auth.dart'; // Import FirebaseAuth
 
 class ManualQuizScreen extends StatefulWidget {
+  const ManualQuizScreen({super.key});
+
   @override
   _ManualQuizScreenState createState() => _ManualQuizScreenState();
 }
@@ -12,6 +14,7 @@ class _ManualQuizScreenState extends State<ManualQuizScreen> {
   final List<Map<String, dynamic>> _questions = []; // List to hold quiz questions
   final TextEditingController _questionController = TextEditingController();
   final List<TextEditingController> _answerControllers = []; // For multiple answers
+  int _correctAnswerIndex = 0; // Track the index of the correct answer
 
   @override
   Widget build(BuildContext context) {
@@ -27,28 +30,41 @@ class _ManualQuizScreenState extends State<ManualQuizScreen> {
           children: [
             TextField(
               controller: _quizTitleController,
-              decoration: InputDecoration(labelText: 'Quiz Title'),
+              decoration: const InputDecoration(labelText: 'Quiz Title'),
             ),
             const SizedBox(height: 15),
             TextField(
               controller: _questionController,
-              decoration: InputDecoration(labelText: 'Question'),
+              decoration: const InputDecoration(labelText: 'Question'),
             ),
             const SizedBox(height: 15),
             // Adding answer inputs dynamically
             ..._buildAnswerInputs(),
+            const SizedBox(height: 15),
+            DropdownButton<int>(
+              value: _correctAnswerIndex,
+              onChanged: (value) {
+                setState(() {
+                  _correctAnswerIndex = value!;
+                });
+              },
+              items: List.generate(
+                _answerControllers.length,
+                    (index) => DropdownMenuItem(
+                  value: index,
+                  child: Text('Answer ${index + 1}'),
+                ),
+              ),
+              hint: const Text('Select Correct Answer'),
+            ),
             const SizedBox(height: 20),
             ElevatedButton(
-              onPressed: () {
-                _addQuestion();
-              },
+              onPressed: _addQuestion,
               child: const Text('Add Question'),
             ),
             const SizedBox(height: 20),
             ElevatedButton(
-              onPressed: () {
-                _saveQuiz();
-              },
+              onPressed: _saveQuiz,
               child: const Text('Save Quiz'),
             ),
             const SizedBox(height: 20),
@@ -80,9 +96,7 @@ class _ManualQuizScreenState extends State<ManualQuizScreen> {
       },
     )..add(
       ElevatedButton(
-        onPressed: () {
-          _addAnswerField(); // Button to add more answer fields
-        },
+        onPressed: _addAnswerField, // Button to add more answer fields
         child: const Text('Add Answer'),
       ),
     );
@@ -95,15 +109,17 @@ class _ManualQuizScreenState extends State<ManualQuizScreen> {
   }
 
   void _addQuestion() {
-    if (_questionController.text.isNotEmpty) {
+    if (_questionController.text.isNotEmpty && _answerControllers.isNotEmpty) {
       final answers = _answerControllers.map((controller) => controller.text).toList();
       setState(() {
         _questions.add({
           'question': _questionController.text,
           'answers': answers,
+          'correctAnswerIndex': _correctAnswerIndex, // Save the correct answer index
         });
         _questionController.clear();
         _answerControllers.clear(); // Clear answers after adding the question
+        _correctAnswerIndex = 0; // Reset the correct answer index
       });
     }
   }
@@ -117,6 +133,9 @@ class _ManualQuizScreenState extends State<ManualQuizScreen> {
         'questions': _questions,
         'createdAt': Timestamp.now(),
       });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Quiz saved successfully!')),
+      );
       Navigator.pop(context); // Go back to home screen after saving
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(

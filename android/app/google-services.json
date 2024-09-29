@@ -12,7 +12,20 @@
           "package_name": "com.example.flashlearn"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "66052011891-cajgp3dq2bjdbj8svq48ugj63pj5rr15.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.flashlearn.app",
+            "certificate_hash": "c1:fa:5e:3c:d9:cf:e4:38:1b:75:e6:aa:a0:0f:eb:50:fd:78:95:d7"
+          }
+        },
+        {
+          "client_id": "66052011891-4hv87qr3t2r1rfr0rsulggoos45fgdph.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyD61ieSwLwe-NFr-X0Ms8cJXwVDaebcaJs"
@@ -20,7 +33,12 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "66052011891-4hv87qr3t2r1rfr0rsulggoos45fgdph.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }
