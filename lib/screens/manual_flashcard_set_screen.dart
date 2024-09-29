@@ -45,8 +45,7 @@ class _ManualFlashcardSetScreenState extends State<ManualFlashcardSetScreen> {
               onPressed: () {
                 _addFlashcard();
               },
-              child: const Text( style: TextStyle(color:Colors.
-              ), 'Add Flashcard'),
+              child: const Text( style: TextStyle(color:Colors.white), 'Add Flashcard'),
             ),
             const SizedBox(height: 20),
             ElevatedButton(
