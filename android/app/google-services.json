@@ -1,41 +1,41 @@
 {
   "project_info": {
-    "project_number": "66052011891",
-    "project_id": "flashlearn-c5b09",
-    "storage_bucket": "flashlearn-c5b09.appspot.com"
+    "project_number": "1046641402981",
+    "project_id": "flashlearn-1430f",
+    "storage_bucket": "flashlearn-1430f.appspot.com"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:66052011891:android:eb69b6f60cafe285d1b706",
+        "mobilesdk_app_id": "1:1046641402981:android:ef201351d00bc94587d28c",
         "android_client_info": {
           "package_name": "com.example.flashlearn"
         }
       },
       "oauth_client": [
         {
-          "client_id": "66052011891-cajgp3dq2bjdbj8svq48ugj63pj5rr15.apps.googleusercontent.com",
+          "client_id": "1046641402981-ro75p06ofe5c1v3rub4vviq1p0v362jc.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
-            "package_name": "com.flashlearn.app",
-            "certificate_hash": "c1:fa:5e:3c:d9:cf:e4:38:1b:75:e6:aa:a0:0f:eb:50:fd:78:95:d7"
+            "package_name": "com.example.flashlearn",
+            "certificate_hash": "fc000b61001888409f0508351f6308115774e8ce"
           }
         },
         {
-          "client_id": "66052011891-4hv87qr3t2r1rfr0rsulggoos45fgdph.apps.googleusercontent.com",
+          "client_id": "1046641402981-3hk875ff2tkha9odl9dib3i4ejpno4ip.apps.googleusercontent.com",
           "client_type": 3
         }
       ],
       "api_key": [
         {
-          "current_key": "AIzaSyD61ieSwLwe-NFr-X0Ms8cJXwVDaebcaJs"
+          "current_key": "AIzaSyCz_aiy1oeCTanZbzhekL8evcpgAkxHdAA"
         }
       ],
       "services": {
         "appinvite_service": {
           "other_platform_oauth_client": [
             {
-              "client_id": "66052011891-4hv87qr3t2r1rfr0rsulggoos45fgdph.apps.googleusercontent.com",
+              "client_id": "1046641402981-3hk875ff2tkha9odl9dib3i4ejpno4ip.apps.googleusercontent.com",
               "client_type": 3
             }
           ]

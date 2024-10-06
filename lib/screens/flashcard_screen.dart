@@ -74,7 +74,7 @@ class _FlashcardScreenState extends State<FlashcardScreen> {
                 term: flashcards[_currentIndex]['term']!,
                 definition: flashcards[_currentIndex]['definition']!,
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 30),
               ElevatedButton(
                 onPressed: () => _nextFlashcard(flashcards.length), // Pass the number of flashcards
                 style: ElevatedButton.styleFrom(
@@ -137,42 +137,49 @@ class _FlashcardState extends State<Flashcard> with SingleTickerProviderStateMix
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: _toggleCard,
-      child: Container(
-        margin: const EdgeInsets.all(10),
-        child: AnimatedBuilder(
-          animation: _animation,
-          child: Card(
-            elevation: 4,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: SizedBox(
-              height: 120,
-              width: double.infinity,
-              child: Center(
-                child: _isFlipped
-                    ? Transform(
-                  alignment: Alignment.center,
-                  transform: Matrix4.rotationY(3.14), // Rotate the card 180 degrees
-                  child: Text(
-                    widget.definition,
-                    style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+      child: Center(
+        child: Container(
+          margin: const EdgeInsets.all(10),
+          child: AnimatedBuilder(
+            animation: _animation,
+            child: Container(
+              child: Card(
+                elevation: 4,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Container(
+                  decoration: BoxDecoration(color: Colors.amber,),
+                  child: SizedBox(
+                    height: 300,
+                    width: 300,
+                    child: Center(
+                      child: _isFlipped
+                          ? Transform(
+                        alignment: Alignment.center,
+                        transform: Matrix4.rotationY(3.14), // Rotate the card 180 degrees
+                        child: Text(
+                          widget.definition,
+                          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold,color: Colors.white),
+                        ),
+                      )
+                          : Text(
+                        widget.term,
+                        style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
+                      ),
+                    ),
                   ),
-                )
-                    : Text(
-                  widget.term,
-                  style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                 ),
               ),
             ),
+            builder: (context, child) {
+              return Transform(
+                alignment: Alignment.center,
+                transform: Matrix4.rotationY(_animation.value * (3.14 / 180)),
+                child: child,
+              );
+            },
           ),
-          builder: (context, child) {
-            return Transform(
-              alignment: Alignment.center,
-              transform: Matrix4.rotationY(_animation.value * (3.14 / 180)),
-              child: child,
-            );
-          },
         ),
       ),
     );

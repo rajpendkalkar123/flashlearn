@@ -27,15 +27,25 @@ class _HomeScreenState extends State<HomeScreen> {
     super.dispose();
   }
 
-  // Fetch flashcards from Firestore
+  // Fetch flashcards and quizzes from Firestore
   Future<void> _fetchFlashcards() async {
-    final QuerySnapshot snapshot = await FirebaseFirestore.instance.collection('flashcards').get();
+    final QuerySnapshot flashcardsSnapshot =
+    await FirebaseFirestore.instance.collection('flashcards').get();
+    final QuerySnapshot quizzesSnapshot =
+    await FirebaseFirestore.instance.collection('quizzes').get();
+
     setState(() {
-      _flashcards = snapshot.docs.map((doc) {
-        // Make sure the fields 'term' and 'setTitle' are being fetched
-        var data = doc.data() as Map<String, dynamic>; // Cast data to Map<String, dynamic>
-        return data['setTitle'] ?? 'No Title'; // Ensure you have a fallback
-      }).toList().cast<String>(); // Cast to List<String>
+      _flashcards = flashcardsSnapshot.docs.map((doc) {
+        var data = doc.data() as Map<String, dynamic>;
+        return '${data['setTitle']} - Flashcard'; // Distinguish flashcards
+      }).toList();
+
+      _flashcards.addAll(quizzesSnapshot.docs.map((doc) {
+        var data = doc.data() as Map<String, dynamic>;
+        return '${data['setTitle']} - Quiz'; // Distinguish quizzes
+      }).toList());
+
+      _filteredFlashcards = _flashcards;
     });
   }
 
@@ -43,7 +53,9 @@ class _HomeScreenState extends State<HomeScreen> {
   void _onSearchChanged() {
     final query = _searchController.text.toLowerCase();
     setState(() {
-      _filteredFlashcards = _flashcards.where((flashcard) => flashcard.toLowerCase().contains(query)).toList();
+      _filteredFlashcards = _flashcards
+          .where((flashcard) => flashcard.toLowerCase().contains(query))
+          .toList();
     });
   }
 
@@ -62,7 +74,11 @@ class _HomeScreenState extends State<HomeScreen> {
           foregroundColor: Colors.white,
           elevation: 12,
           shape: const CircleBorder(
-            side: BorderSide(color: Colors.white, width: 10.0, style: BorderStyle.solid),
+            side: BorderSide(
+              color: Colors.white,
+              width: 10.0,
+              style: BorderStyle.solid,
+            ),
           ),
           child: const Icon(Icons.add),
         ),
@@ -78,18 +94,16 @@ class _HomeScreenState extends State<HomeScreen> {
             children: [
               IconButton(
                 onPressed: () {
-                  // Do nothing if already on home screen
                   if (ModalRoute.of(context)?.settings.name != 'home') {
                     Navigator.pushReplacementNamed(context, 'home');
                   }
                 },
-                icon: const Icon(Icons.home, color: Colors.amber),
+                icon: const Icon(Icons.add_home_outlined, color: Colors.amber),
               ),
               IconButton(
                 onPressed: () {
-                  // Do nothing if already on profile screen
                   if (ModalRoute.of(context)?.settings.name != 'profile') {
-                    Navigator.pushNamed(context,'profile');
+                    Navigator.pushNamed(context, 'profile');
                   }
                 },
                 icon: const Icon(Icons.person, color: Colors.amber),
@@ -102,7 +116,11 @@ class _HomeScreenState extends State<HomeScreen> {
         backgroundColor: Colors.amber,
         title: const Text(
           'Flashlearn',
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 30, color: Colors.white),
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 30,
+            color: Colors.white,
+          ),
         ),
         actions: [
           IconButton(
@@ -154,7 +172,8 @@ class _HomeScreenState extends State<HomeScreen> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => CategoryFlashcardsScreen(category: _filteredFlashcards[index]),
+                          builder: (context) => CategoryFlashcardsScreen(
+                              category: _filteredFlashcards[index]),
                         ),
                       );
                     },
@@ -165,7 +184,10 @@ class _HomeScreenState extends State<HomeScreen> {
           else if (_searchController.text.isNotEmpty)
             const Expanded(
               child: Center(
-                child: Text("No flashcards found", style: TextStyle(color: Colors.amber)),
+                child: Text(
+                  "No flashcards found",
+                  style: TextStyle(color: Colors.amber),
+                ),
               ),
             ),
           Padding(
@@ -173,10 +195,12 @@ class _HomeScreenState extends State<HomeScreen> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text('Flashcard Categories', style: TextStyle(fontSize: 20, color: Colors.amber)),
+                const Text('Flashcard Categories',
+                    style: TextStyle(fontSize: 20, color: Colors.amber)),
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(backgroundColor: Colors.amber),
-                  child: const Text("View All", style: TextStyle(fontSize: 16, color: Colors.white)),
+                  child: const Text("View All",
+                      style: TextStyle(fontSize: 16, color: Colors.white)),
                   onPressed: () {
                     // Implement action to view all categories
                   },
@@ -222,22 +246,25 @@ class _HomeScreenState extends State<HomeScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const Text('Create Flashcard or Quiz', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+              const Text('Create Flashcard or Quiz',
+                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
               const SizedBox(height: 20),
               ListTile(
                 leading: const Icon(Icons.create, color: Colors.amber),
                 title: const Text('Create Manually'),
                 onTap: () {
                   Navigator.pop(context); // Close the current bottom sheet
-                  _showFlashcardOrQuizBottomSheet(context, true); // Show next bottom sheet for manual creation
+                  _showFlashcardOrQuizBottomSheet(
+                      context, true); // Show next bottom sheet for manual creation
                 },
               ),
               ListTile(
-                leading: const Icon(Icons.flash_on, color: Colors.amber),
+                leading: const Icon(Icons.flash_on_rounded, color: Colors.amber),
                 title: const Text('Use AI to Create'),
                 onTap: () {
                   Navigator.pop(context); // Close the current bottom sheet
-                  _showFlashcardOrQuizBottomSheet(context, false); // Show next bottom sheet for AI creation
+                  _showFlashcardOrQuizBottomSheet(
+                      context, false); // Show next bottom sheet for AI creation
                 },
               ),
               const SizedBox(height: 10),
@@ -262,14 +289,16 @@ class _HomeScreenState extends State<HomeScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const Text('Choose Creation Type', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+              const Text('Choose Creation Type',
+                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
               const SizedBox(height: 20),
               ListTile(
                 leading: const Icon(Icons.note_add, color: Colors.amber),
                 title: const Text('Create Flashcard'),
                 onTap: () {
                   Navigator.pop(context); // Close bottom sheet
-                  Navigator.pushNamed(context, isManual ? 'manualFlashcardSet' : 'aiFlashcardCreation'); // Navigate to respective screen
+                  Navigator.pushNamed(context,
+                      isManual ? 'manualFlashcardSet' : 'aiFlashcardCreation');
                 },
               ),
               ListTile(
@@ -277,7 +306,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 title: const Text('Create Quiz'),
                 onTap: () {
                   Navigator.pop(context); // Close bottom sheet
-                  Navigator.pushNamed(context, isManual ? 'manualQuizSet' : 'aiQuizCreation'); // Navigate to respective screen
+                  Navigator.pushNamed(
+                      context, isManual ? 'manualQuizSet' : 'aiQuizCreation');
                 },
               ),
               const SizedBox(height: 10),
@@ -294,7 +324,8 @@ class _HomeScreenState extends State<HomeScreen> {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => CategoryFlashcardsScreen(category: title), // Pass the selected category
+            builder: (context) =>
+                CategoryFlashcardsScreen(category: title), // Pass the category
           ),
         );
       },
