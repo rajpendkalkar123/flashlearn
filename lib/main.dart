@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart'; // Import dotenv
 import 'screens/login_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/create_flashcards_screen.dart';
 import 'screens/manual_quiz_screen.dart';
 import 'screens/manual_flashcard_set_screen.dart';
 import 'screens/profile_screen.dart';
+import 'screens/ai_flashcard_creation_screen.dart'; // Import the AI flashcard creation screen
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -41,8 +43,9 @@ class MyApp extends StatelessWidget {
         'createFlashcard': (context) => const CreateFlashcardScreen(),
         'manualFlashcardSet': (context) => const ManualFlashcardSetScreen(),
         'manualQuiz': (context) => const ManualQuizScreen(),
-        'profile': (context) =>  ProfileScreen(),
+        'profile': (context) => const ProfileScreen(),
         'manualQuizSet': (context) => const ManualQuizScreen(),
+        'aiFlashcardCreation': (context) => const AiFlashcardCreationScreen(),
       },
     );
   }

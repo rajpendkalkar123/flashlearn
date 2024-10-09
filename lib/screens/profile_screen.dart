@@ -34,6 +34,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
       var userData = await _firestore.collection('users').doc(user.uid).get();
       setState(() {
         _usernameController.text = userData['username'] ?? 'No Username'; // Ensure a default value
+        _profileImage = userData['profileImageUrl'] != null
+            ? File(userData['profileImageUrl'])
+            : null; // Load the profile image URL
       });
     }
   }
@@ -300,7 +303,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       String quizId = quizzes[index].id; // Document ID for deletion
 
                       return ListTile(
-                        title: Text(quiz['title']?.toString() ?? 'No Title'), // Ensure the field name matches your Firestore structure
+                        title: Text(quiz['quizTitle']?.toString() ?? 'No Title'), // Ensure the field name matches your Firestore structure
                         subtitle: Text(quiz['description']?.toString() ?? 'No Description'), // Ensure you have a description field
                         trailing: IconButton(
                           icon: Icon(Icons.delete, color: Colors.red),
