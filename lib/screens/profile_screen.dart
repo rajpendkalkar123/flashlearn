@@ -4,9 +4,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
-import 'flashcard_screen.dart'; // Import your flashcard viewing screen
-import 'manual_flashcard_set_screen.dart'; // Import your flashcard creation screen
-import 'quiz_attempt_screen.dart'; // Import your quiz attempt screen
+import 'flashcard_screen.dart';
+import 'manual_flashcard_set_screen.dart';
+import 'quiz_attempt_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -18,22 +18,24 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen> {
   final _auth = FirebaseAuth.instance;
   final _firestore = FirebaseFirestore.instance;
-  final _usernameController = TextEditingController();
+  User? _user;
+  String? _profileImageUrl;
   File? _profileImage;
 
   @override
   void initState() {
     super.initState();
+    _user = _auth.currentUser;
     _loadUserData(); // Load user data on initialization
   }
 
   // Load the user data from Firestore
   Future<void> _loadUserData() async {
-    User? user = _auth.currentUser;
-    if (user != null) {
-      var userData = await _firestore.collection('users').doc(user.uid).get();
+    if (_user != null) {
+      var userData = await _firestore.collection('users').doc(_user!.uid).get();
       setState(() {
-        _usernameController.text = userData['username'] ?? 'No Username'; // Ensure a default value
+        _profileImageUrl = userData['profileImageUrl'];
+        print('Fetched Profile Image URL: $_profileImageUrl'); // Debugging line
       });
     }
   }
@@ -41,19 +43,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
   // Upload profile image to Firebase Storage
   Future<void> _uploadProfileImage() async {
     if (_profileImage != null) {
-      User? user = _auth.currentUser;
-      if (user != null) {
+      if (_user != null) {
         final ref = FirebaseStorage.instance
             .ref()
             .child('profile_images')
-            .child('${user.uid}.jpg');
+            .child('${_user!.uid}.jpg');
         await ref.putFile(_profileImage!);
         String url = await ref.getDownloadURL();
 
         // Update Firestore with the new profile image URL
-        await _firestore.collection('users').doc(user.uid).update({
+        await _firestore.collection('users').doc(_user!.uid).update({
           'profileImageUrl': url,
         });
+
+        setState(() {
+          _profileImageUrl = url; // Update the state with the new URL
+        });
+
+        print('Uploaded Image URL: $url'); // Debugging line
       }
     }
   }
@@ -68,36 +75,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
       }
     });
     await _uploadProfileImage(); // Automatically upload image once picked
-  }
-
-  // Update Username in Firestore
-  Future<void> _updateUsername() async {
-    User? user = _auth.currentUser;
-    if (user != null) {
-      await _firestore.collection('users').doc(user.uid).update({
-        'username': _usernameController.text,
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Username updated successfully!')),
-      );
-    }
+    await _loadUserData(); // Fetch updated user data including profile image URL
   }
 
   // Fetch the user's flashcard sets from Firestore
   Stream<QuerySnapshot> _getFlashcardSets() {
-    User? user = _auth.currentUser;
     return _firestore
         .collection('flashcardSets')
-        .where('userId', isEqualTo: user?.uid)
+        .where('userId', isEqualTo: _user?.uid)
         .snapshots();
   }
 
   // Fetch the user's quizzes from Firestore
   Stream<QuerySnapshot> _getQuizzes() {
-    User? user = _auth.currentUser;
     return _firestore
         .collection('quizzes')
-        .where('userId', isEqualTo: user?.uid)
+        .where('userId', isEqualTo: _user?.uid)
         .snapshots();
   }
 
@@ -117,6 +110,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+  // Log out the user
+  Future<void> _logout() async {
+    await _auth.signOut();
+    Navigator.pushReplacementNamed(context, 'login'); // Navigate to the login screen
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -125,9 +124,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
         backgroundColor: Colors.amber,
         leading: IconButton(
           icon: Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.pop(context, 'Home'), // This is correct
+          onPressed: () => Navigator.pop(context, 'Home'),
         ),
         title: Text('User Profile', style: TextStyle(color: Colors.white)),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.logout, color: Colors.white),
+            onPressed: _logout, // Log out functionality
+          ),
+        ],
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       floatingActionButton: SizedBox(
@@ -135,11 +140,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
         height: 80,
         child: FloatingActionButton(
           onPressed: () {
-            // Navigate to ManualFlashcardSetScreen when the button is pressed
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => ManualFlashcardSetScreen(), // Navigate to flashcard creation screen
+                builder: (context) => ManualFlashcardSetScreen(),
               ),
             );
           },
@@ -163,13 +167,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
             children: [
               IconButton(
                 onPressed: () {
-                  Navigator.pop(context, 'home'); // Use pushReplacementNamed
+                  Navigator.pop(context, 'home');
                 },
                 icon: const Icon(Icons.home, color: Colors.amber),
               ),
               IconButton(
                 onPressed: () {
-                  Navigator.pop(context, 'profile'); // Use pushReplacementNamed
+                  Navigator.pop(context, 'profile');
                 },
                 icon: const Icon(Icons.person, color: Colors.amber),
               ),
@@ -187,9 +191,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 onTap: _pickImage,
                 child: CircleAvatar(
                   radius: 60,
-                  backgroundImage: _profileImage != null
-                      ? FileImage(_profileImage!)
-                      : AssetImage('assets/placeholder.png'), // Placeholder image
+                  backgroundImage: (_profileImageUrl != null && _profileImageUrl!.isNotEmpty)
+                      ? NetworkImage(_profileImageUrl!)
+                      : AssetImage('assets/placeholder.png') as ImageProvider,
                   child: Align(
                     alignment: Alignment.bottomRight,
                     child: Icon(Icons.camera_alt, color: Colors.amber, size: 30),
@@ -198,15 +202,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
             ),
             SizedBox(height: 20),
-            TextField(
-              controller: _usernameController,
-              decoration: InputDecoration(
-                labelText: 'Username',
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12.0)),
-                suffixIcon: IconButton(
-                  icon: Icon(Icons.edit, color: Colors.amber),
-                  onPressed: _updateUsername, // Update username in Firestore
-                ),
+            Center(
+              child: Text(
+                _user?.email ?? 'No email available',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
             ),
             SizedBox(height: 20),
@@ -216,7 +215,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
             Expanded(
               child: StreamBuilder<QuerySnapshot>(
-                stream: _getFlashcardSets(), // Stream flashcard sets
+                stream: _getFlashcardSets(),
                 builder: (context, snapshot) {
                   if (!snapshot.hasData) {
                     return Center(child: CircularProgressIndicator());
@@ -234,13 +233,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       String flashcardSetId = flashcardSets[index].id;
 
                       return ListTile(
-                        title: Text(flashcardSet['setTitle']?.toString() ?? 'No Title'), // Ensure the field name matches your Firestore structure
+                        title: Text(flashcardSet['setTitle']?.toString() ?? 'No Title'),
                         subtitle: FutureBuilder<QuerySnapshot>(
                           future: _firestore
                               .collection('flashcardSets')
                               .doc(flashcardSetId)
                               .collection('flashcards')
-                              .get(), // Get the flashcards in this set
+                              .get(),
                           builder: (context, snapshot) {
                             if (snapshot.connectionState == ConnectionState.waiting) {
                               return Text('Loading flashcards...');
@@ -259,13 +258,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           },
                         ),
                         onTap: () {
-                          // Navigate to the FlashcardScreen when a flashcard set is tapped
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => FlashcardScreen(
-                                flashcardSetId: flashcardSetId, // Pass the flashcard set ID
-                              ),
+                              builder: (context) => FlashcardScreen(flashcardSetId: flashcardSetId),
                             ),
                           );
                         },
@@ -282,7 +278,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
             Expanded(
               child: StreamBuilder<QuerySnapshot>(
-                stream: _getQuizzes(), // Stream quizzes
+                stream: _getQuizzes(),
                 builder: (context, snapshot) {
                   if (!snapshot.hasData) {
                     return Center(child: CircularProgressIndicator());
@@ -297,11 +293,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     itemCount: quizzes.length,
                     itemBuilder: (context, index) {
                       var quiz = quizzes[index].data() as Map<String, dynamic>;
-                      String quizId = quizzes[index].id; // Document ID for deletion
+                      String quizId = quizzes[index].id;
 
                       return ListTile(
-                        title: Text(quiz['title']?.toString() ?? 'No Title'), // Ensure the field name matches your Firestore structure
-                        subtitle: Text(quiz['description']?.toString() ?? 'No Description'), // Ensure you have a description field
+                        title: Text(quiz['quizTitle']?.toString() ?? 'No Title'),
                         trailing: IconButton(
                           icon: Icon(Icons.delete, color: Colors.red),
                           onPressed: () async {
@@ -309,11 +304,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           },
                         ),
                         onTap: () {
-                          // Navigate to the QuizAttemptScreen when a quiz is tapped
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => QuizAttemptScreen(quizId: quizId), // Create this screen
+                              builder: (context) => QuizAttemptScreen(quizId: quizId),
                             ),
                           );
                         },

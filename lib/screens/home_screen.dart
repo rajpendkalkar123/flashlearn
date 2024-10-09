@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'category_flashcards_screen.dart'; // Ensure this file exists to handle category selections
+import 'category_flashcards_screen.dart'; // Screen for flashcard sets
+import 'quiz_attempt_screen.dart'; // Screen for quiz attempts
+import 'flashcard_screen.dart'; // Import the flashcard screen
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -11,13 +13,12 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final TextEditingController _searchController = TextEditingController();
-  List<String> _flashcards = [];
-  List<String> _filteredFlashcards = [];
+  List<Map<String, String>> _searchResults = [];
+  bool _isSearching = false;
 
   @override
   void initState() {
     super.initState();
-    _fetchFlashcards();
     _searchController.addListener(_onSearchChanged);
   }
 
@@ -27,35 +28,52 @@ class _HomeScreenState extends State<HomeScreen> {
     super.dispose();
   }
 
-  // Fetch flashcards and quizzes from Firestore
-  Future<void> _fetchFlashcards() async {
-    final QuerySnapshot flashcardsSnapshot =
-    await FirebaseFirestore.instance.collection('flashcards').get();
-    final QuerySnapshot quizzesSnapshot =
-    await FirebaseFirestore.instance.collection('quizzes').get();
-
-    setState(() {
-      _flashcards = flashcardsSnapshot.docs.map((doc) {
-        var data = doc.data() as Map<String, dynamic>;
-        return '${data['setTitle']} - Flashcard'; // Distinguish flashcards
-      }).toList();
-
-      _flashcards.addAll(quizzesSnapshot.docs.map((doc) {
-        var data = doc.data() as Map<String, dynamic>;
-        return '${data['setTitle']} - Quiz'; // Distinguish quizzes
-      }).toList());
-
-      _filteredFlashcards = _flashcards;
-    });
-  }
-
   // Handle search input changes
   void _onSearchChanged() {
     final query = _searchController.text.toLowerCase();
+    if (query.isEmpty) {
+      setState(() {
+        _isSearching = false;
+      });
+    } else {
+      _performSearch(query);
+    }
+  }
+
+  // Perform search for flashcards and quizzes
+  Future<void> _performSearch(String query) async {
+    final flashcardsSnapshot = await FirebaseFirestore.instance.collection('flashcardSets').get();
+    final quizzesSnapshot = await FirebaseFirestore.instance.collection('quizzes').get();
+
+    List<Map<String, String>> results = [];
+
+    for (var doc in flashcardsSnapshot.docs) {
+      var data = doc.data() as Map<String, dynamic>;
+      String title = data['setTitle']?.toString() ?? 'Untitled Flashcard';
+      if (title.toLowerCase().contains(query)) {
+        results.add({
+          'type': 'flashcard',
+          'id': doc.id,
+          'title': title,
+        });
+      }
+    }
+
+    for (var doc in quizzesSnapshot.docs) {
+      var data = doc.data() as Map<String, dynamic>;
+      String title = data['quizTitle']?.toString() ?? 'Untitled Quiz';
+      if (title.toLowerCase().contains(query)) {
+        results.add({
+          'type': 'quiz',
+          'id': doc.id,
+          'title': title,
+        });
+      }
+    }
+
     setState(() {
-      _filteredFlashcards = _flashcards
-          .where((flashcard) => flashcard.toLowerCase().contains(query))
-          .toList();
+      _searchResults = results;
+      _isSearching = true;
     });
   }
 
@@ -98,7 +116,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     Navigator.pushReplacementNamed(context, 'home');
                   }
                 },
-                icon: const Icon(Icons.add_home_outlined, color: Colors.amber),
+                icon: const Icon(Icons.home_rounded, color: Colors.amber),
               ),
               IconButton(
                 onPressed: () {
@@ -114,13 +132,12 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       appBar: AppBar(
         backgroundColor: Colors.amber,
-        title: const Text(
-          'Flashlearn',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 30,
-            color: Colors.white,
-          ),
+        title:
+        Container(
+          width: 200,
+          height: 38,
+          child: Image.asset('lib/assets/images/img2.png'),
+          alignment: Alignment.topLeft
         ),
         actions: [
           IconButton(
@@ -153,7 +170,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 controller: _searchController,
                 decoration: const InputDecoration(
                   border: InputBorder.none,
-                  hintText: "Search Flashcards",
+                  hintText: "Search Flashcards or Quizzes",
                   hintStyle: TextStyle(color: Colors.amber, fontSize: 18),
                   prefixIcon: Icon(Icons.search, color: Colors.amber),
                   contentPadding: EdgeInsets.symmetric(vertical: 15),
@@ -161,78 +178,72 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
           ),
-          if (_searchController.text.isNotEmpty && _filteredFlashcards.isNotEmpty)
+          if (_isSearching && _searchResults.isNotEmpty)
             Expanded(
               child: ListView.builder(
-                itemCount: _filteredFlashcards.length,
+                itemCount: _searchResults.length,
                 itemBuilder: (context, index) {
+                  var result = _searchResults[index];
                   return ListTile(
-                    title: Text(_filteredFlashcards[index]),
+                    title: Text(result['title'] ?? 'Untitled'),
+                    subtitle: Text(result['type'] == 'flashcard' ? 'Flashcard Set' : 'Quiz'),
                     onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => CategoryFlashcardsScreen(
-                              category: _filteredFlashcards[index]),
-                        ),
-                      );
+                      if (result['type'] == 'flashcard') {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => FlashcardScreen(
+                              flashcardSetId: result['id']!, // Pass the flashcard set ID
+                            ),
+                          ),
+                        );
+                      } else if (result['type'] == 'quiz') {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => QuizAttemptScreen(quizId: result['id']!),
+                          ),
+                        );
+                      }
                     },
                   );
                 },
               ),
             )
-          else if (_searchController.text.isNotEmpty)
+          else if (_isSearching && _searchResults.isEmpty)
             const Expanded(
               child: Center(
                 child: Text(
-                  "No flashcards found",
+                  "No results found",
                   style: TextStyle(color: Colors.amber),
                 ),
               ),
             ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text('Flashcard Categories',
-                    style: TextStyle(fontSize: 20, color: Colors.amber)),
-                ElevatedButton(
-                  style: ElevatedButton.styleFrom(backgroundColor: Colors.amber),
-                  child: const Text("View All",
-                      style: TextStyle(fontSize: 16, color: Colors.white)),
-                  onPressed: () {
-                    // Implement action to view all categories
-                  },
-                ),
-              ],
+          if (!_isSearching) // Original layout
+            Expanded(
+              child: GridView.count(
+                padding: const EdgeInsets.all(16),
+                crossAxisCount: 3,
+                crossAxisSpacing: 10,
+                mainAxisSpacing: 10,
+                children: [
+                  _buildCategoryCard(Icons.calculate, 'Mathematics', context),
+                  _buildCategoryCard(Icons.science, 'Science', context),
+                  _buildCategoryCard(Icons.business, 'Business', context),
+                  _buildCategoryCard(Icons.computer, 'Computer', context),
+                  _buildCategoryCard(Icons.book, 'Literature', context),
+                  _buildCategoryCard(Icons.language, 'Language', context),
+                  _buildCategoryCard(Icons.data_thresholding, 'Data Structure', context),
+                  _buildCategoryCard(Icons.memory, 'DLCOA', context),
+                  _buildCategoryCard(Icons.code, 'JAVA', context),
+                ],
+              ),
             ),
-          ),
-          Expanded(
-            child: GridView.count(
-              padding: const EdgeInsets.all(16),
-              crossAxisCount: 3,
-              crossAxisSpacing: 10,
-              mainAxisSpacing: 10,
-              children: [
-                _buildCategoryCard(Icons.calculate, 'Mathematics', context),
-                _buildCategoryCard(Icons.science, 'Science', context),
-                _buildCategoryCard(Icons.business, 'Business', context),
-                _buildCategoryCard(Icons.computer, 'Computer', context),
-                _buildCategoryCard(Icons.book, 'Literature', context),
-                _buildCategoryCard(Icons.language, 'Language', context),
-                _buildCategoryCard(Icons.data_thresholding, 'Data Structure', context),
-                _buildCategoryCard(Icons.memory, 'DLCOA', context),
-                _buildCategoryCard(Icons.code, 'JAVA', context),
-              ],
-            ),
-          ),
         ],
       ),
     );
   }
 
-  // Show first bottom sheet to choose between AI or Manual creation
   void _showCreateFlashcardBottomSheet(BuildContext context) {
     showModalBottomSheet(
       context: context,
@@ -246,25 +257,22 @@ class _HomeScreenState extends State<HomeScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const Text('Create Flashcard or Quiz',
-                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+              const Text('Create Flashcard or Quiz', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
               const SizedBox(height: 20),
               ListTile(
                 leading: const Icon(Icons.create, color: Colors.amber),
                 title: const Text('Create Manually'),
                 onTap: () {
                   Navigator.pop(context); // Close the current bottom sheet
-                  _showFlashcardOrQuizBottomSheet(
-                      context, true); // Show next bottom sheet for manual creation
+                  _showFlashcardOrQuizBottomSheet(context, true); // Show next bottom sheet for manual creation
                 },
               ),
               ListTile(
-                leading: const Icon(Icons.flash_on_rounded, color: Colors.amber),
-                title: const Text('Use AI to Create'),
+                leading: const Icon(Icons.flash_on, color: Colors.amber),
+                title: const Text('Generate with AI'),
                 onTap: () {
-                  Navigator.pop(context); // Close the current bottom sheet
-                  _showFlashcardOrQuizBottomSheet(
-                      context, false); // Show next bottom sheet for AI creation
+                  Navigator.pop(context); // Close the bottom sheet
+                  Navigator.pushNamed(context, 'aiFlashcardCreation'); // Navigate to AI creation screen
                 },
               ),
               const SizedBox(height: 10),
@@ -275,7 +283,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // Show second bottom sheet to choose between flashcard or quiz
   void _showFlashcardOrQuizBottomSheet(BuildContext context, bool isManual) {
     showModalBottomSheet(
       context: context,
@@ -289,16 +296,14 @@ class _HomeScreenState extends State<HomeScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const Text('Choose Creation Type',
-                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+              const Text('Choose Creation Type', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
               const SizedBox(height: 20),
               ListTile(
                 leading: const Icon(Icons.note_add, color: Colors.amber),
                 title: const Text('Create Flashcard'),
                 onTap: () {
                   Navigator.pop(context); // Close bottom sheet
-                  Navigator.pushNamed(context,
-                      isManual ? 'manualFlashcardSet' : 'aiFlashcardCreation');
+                  Navigator.pushNamed(context, isManual ? 'manualFlashcardSet' : 'aiFlashcardCreation'); // Navigate to respective screen
                 },
               ),
               ListTile(
@@ -306,8 +311,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 title: const Text('Create Quiz'),
                 onTap: () {
                   Navigator.pop(context); // Close bottom sheet
-                  Navigator.pushNamed(
-                      context, isManual ? 'manualQuizSet' : 'aiQuizCreation');
+                  Navigator.pushNamed(context, isManual ? 'manualQuizSet' : 'aiQuizCreation'); // Navigate to respective screen
                 },
               ),
               const SizedBox(height: 10),
@@ -324,8 +328,7 @@ class _HomeScreenState extends State<HomeScreen> {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) =>
-                CategoryFlashcardsScreen(category: title), // Pass the category
+            builder: (context) => CategoryFlashcardsScreen(category: title), // Pass the selected category
           ),
         );
       },

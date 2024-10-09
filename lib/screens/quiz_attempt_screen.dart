@@ -1,79 +1,49 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart'; // Import Firestore
+import 'package:firebase_auth/firebase_auth.dart'; // Import FirebaseAuth
 import 'quiz_screen.dart'; // Import the QuizScreen
 
 class QuizAttemptScreen extends StatelessWidget {
-  final String quizId;
+  final String quizId; // Pass quizId to fetch specific quiz
 
-  const QuizAttemptScreen({super.key, required this.quizId});
+  const QuizAttemptScreen({Key? key, required this.quizId}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Attempt Quiz'),
+        title: const Text('Quiz Attempt'),
         backgroundColor: Colors.amber,
-        elevation: 0,
       ),
       body: FutureBuilder<DocumentSnapshot>(
         future: FirebaseFirestore.instance.collection('quizzes').doc(quizId).get(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
+            return Center(child: CircularProgressIndicator());
           }
 
           if (snapshot.hasError) {
-            return const Center(child: Text('Error loading quiz'));
+            return Center(child: Text('Error: ${snapshot.error}'));
           }
 
           if (!snapshot.hasData || !snapshot.data!.exists) {
-            return const Center(child: Text('Quiz does not exist'));
+            return Center(child: Text('Quiz not found'));
           }
 
-          var quizData = snapshot.data!.data() as Map<String, dynamic>;
+          final quizData = snapshot.data!.data() as Map<String, dynamic>;
+          final quizTitle = quizData['quizTitle'];
+          final List<dynamic> questions = quizData['questions'];
 
-          // Ensure the title is retrieved correctly
-          String quizTitle = quizData['quizTitle'] ?? 'No Title';
+          // Transform the questions into a more usable format
+          List<Map<String, dynamic>> quizQuestions = questions.map((question) {
+            return {
+              'question': question['question'],
+              'answers': question['answers'],
+              'correctAnswerIndex': question['correctAnswerIndex'],
+            };
+          }).toList();
 
-          // Pass quiz data to the QuizScreen
-          return Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Text(
-                  quizTitle,
-                  style: const TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 20),
-                ElevatedButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => QuizScreen(quiz: quizData),
-                      ),
-                    );
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.amber,
-                    padding: const EdgeInsets.symmetric(vertical: 15),
-                  ),
-                  child: const Text(
-                    'Start Quiz',
-                    style: TextStyle(
-                      fontSize: 18,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          );
+          return QuizScreen(quizTitle: quizTitle, questions: quizQuestions);
         },
       ),
     );

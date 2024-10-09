@@ -32,7 +32,7 @@ class _FlashcardScreenState extends State<FlashcardScreen> {
       return {
         'term': data['term']?.toString() ?? 'No Term', // Ensure type safety
         'definition': data['definition']?.toString() ?? 'No Definition',
-      } as Map<String, String>; // Cast to Map<String, String>
+      }; // Cast to Map<String, String>
     }).toList();
   }
 
@@ -49,7 +49,7 @@ class _FlashcardScreenState extends State<FlashcardScreen> {
         title: const Text('Flashcards'),
         backgroundColor: Colors.amber,
       ),
-      body: FutureBuilder<List<Map<String, String>>>(
+      body: FutureBuilder<List<Map<String, String>>>( // Use FutureBuilder to fetch flashcards
         future: _flashcardsFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
@@ -143,30 +143,40 @@ class _FlashcardState extends State<Flashcard> with SingleTickerProviderStateMix
           child: AnimatedBuilder(
             animation: _animation,
             child: Container(
-              child: Card(
-                elevation: 4,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Container(
-                  decoration: BoxDecoration(color: Colors.amber,),
-                  child: SizedBox(
-                    height: 300,
-                    width: 300,
-                    child: Center(
-                      child: _isFlipped
-                          ? Transform(
-                        alignment: Alignment.center,
-                        transform: Matrix4.rotationY(3.14), // Rotate the card 180 degrees
-                        child: Text(
-                          widget.definition,
-                          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold,color: Colors.white),
+              decoration: BoxDecoration(
+                color: Colors.amber,
+                borderRadius: BorderRadius.circular(12), // Rounded corners
+              ),
+              child: SizedBox(
+                // Change to `Intrinsics` to adjust size according to text
+                child: Center(
+                  child: _isFlipped
+                      ? Transform(
+                    alignment: Alignment.center,
+                    transform: Matrix4.rotationY(3.14), // Rotate the card 180 degrees
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Text(
+                        widget.definition,
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
                         ),
-                      )
-                          : Text(
-                        widget.term,
-                        style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
+                        textAlign: TextAlign.center, // Centering the text
                       ),
+                    ),
+                  )
+                      : Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Text(
+                      widget.term,
+                      style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                      textAlign: TextAlign.center, // Centering the text
                     ),
                   ),
                 ),

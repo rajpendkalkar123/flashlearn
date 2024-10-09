@@ -41,22 +41,23 @@ class _ManualQuizScreenState extends State<ManualQuizScreen> {
             // Adding answer inputs dynamically
             ..._buildAnswerInputs(),
             const SizedBox(height: 15),
-            DropdownButton<int>(
-              value: _correctAnswerIndex,
-              onChanged: (value) {
-                setState(() {
-                  _correctAnswerIndex = value!;
-                });
-              },
-              items: List.generate(
-                _answerControllers.length,
-                    (index) => DropdownMenuItem(
-                  value: index,
-                  child: Text('Answer ${index + 1}'),
+            if (_answerControllers.isNotEmpty) // Show dropdown only if there are answers
+              DropdownButton<int>(
+                value: _correctAnswerIndex,
+                onChanged: (value) {
+                  setState(() {
+                    _correctAnswerIndex = value!; // Ensure value is not null
+                  });
+                },
+                items: List.generate(
+                  _answerControllers.length,
+                      (index) => DropdownMenuItem(
+                    value: index,
+                    child: Text('Answer ${index + 1}'),
+                  ),
                 ),
+                hint: const Text('Select Correct Answer'),
               ),
-              hint: const Text('Select Correct Answer'),
-            ),
             const SizedBox(height: 20),
             ElevatedButton(
               onPressed: _addQuestion,
@@ -118,13 +119,25 @@ class _ManualQuizScreenState extends State<ManualQuizScreen> {
           'correctAnswerIndex': _correctAnswerIndex, // Save the correct answer index
         });
         _questionController.clear();
-        _answerControllers.clear(); // Clear answers after adding the question
+        _answerControllers.forEach((controller) => controller.clear()); // Clear answers after adding the question
+        _answerControllers.clear(); // Reset answer fields
         _correctAnswerIndex = 0; // Reset the correct answer index
       });
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter a question and at least one answer.')),
+      );
     }
   }
 
   Future<void> _saveQuiz() async {
+    if (_questions.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please add at least one question to save the quiz.')),
+      );
+      return;
+    }
+
     try {
       String uid = FirebaseAuth.instance.currentUser!.uid; // Get user ID
       await FirebaseFirestore.instance.collection('quizzes').add({

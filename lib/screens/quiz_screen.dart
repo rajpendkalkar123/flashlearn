@@ -1,9 +1,14 @@
 import 'package:flutter/material.dart';
 
 class QuizScreen extends StatefulWidget {
-  final Map<String, dynamic> quiz;
+  final String quizTitle;
+  final List<Map<String, dynamic>> questions;
 
-  const QuizScreen({super.key, required this.quiz});
+  const QuizScreen({
+    super.key,
+    required this.quizTitle,
+    required this.questions,
+  });
 
   @override
   _QuizScreenState createState() => _QuizScreenState();
@@ -17,105 +22,61 @@ class _QuizScreenState extends State<QuizScreen> {
 
   @override
   Widget build(BuildContext context) {
-    var questions = (widget.quiz['questions'] as List<dynamic>?);
-
-    if (questions == null || questions.isEmpty) {
+    if (widget.questions.isEmpty) {
       return Scaffold(
         appBar: AppBar(
-          title: const Text('Quiz Error'),
+          title: Text(widget.quizTitle),
           backgroundColor: Colors.amber,
         ),
         body: const Center(
-          child: Text(
-            'No questions available for this quiz.',
-            style: TextStyle(fontSize: 18),
-          ),
+          child: Text('No questions available.'),
         ),
       );
     }
 
-    var currentQuestion = questions[_currentQuestionIndex];
+    if (_currentQuestionIndex >= widget.questions.length) {
+      return Scaffold(
+        appBar: AppBar(
+          title: Text(widget.quizTitle),
+          backgroundColor: Colors.amber,
+        ),
+        body: const Center(
+          child: Text('No more questions.'),
+        ),
+      );
+    }
+
+    final currentQuestion = widget.questions[_currentQuestionIndex];
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Quiz in Progress'),
+        title: Text(widget.quizTitle),
         backgroundColor: Colors.amber,
-        elevation: 0,
       ),
       body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
+        padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            _buildProgressBar(questions.length),
+            _buildProgressBar(widget.questions.length),
             const SizedBox(height: 20),
             Text(
-              currentQuestion['question'] ?? 'No question available',
-              style: const TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
-              textAlign: TextAlign.center,
+              currentQuestion['question'],
+              style: const TextStyle(fontSize: 18),
             ),
-            const SizedBox(height: 30),
-            if (currentQuestion['answers'] != null)
-              for (int i = 0; i < (currentQuestion['answers'] as List<dynamic>).length; i++)
-                _buildOption(i, currentQuestion['answers'][i].toString())
-            else
-              const Text('No answers available for this question.'),
-            const Spacer(),
+            const SizedBox(height: 20),
+            Expanded(
+              child: ListView.builder(
+                itemCount: currentQuestion['answers'].length,
+                itemBuilder: (context, index) {
+                  return _buildOption(index, currentQuestion['answers'][index]);
+                },
+              ),
+            ),
+            const SizedBox(height: 20),
             ElevatedButton(
               onPressed: _isReview ? _finishQuiz : _nextQuestion,
-              child: Text(_isReview ? 'Finish Quiz' : 'Next Question'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.amber,
-                padding: const EdgeInsets.symmetric(vertical: 15),
-              ),
-            ),
-            const SizedBox(height: 20),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildOption(int index, String optionText) {
-    bool isSelected = index == _selectedOptionIndex;
-
-    return GestureDetector(
-      onTap: () {
-        setState(() {
-          _selectedOptionIndex = index;
-        });
-
-        var questions = widget.quiz['questions'] as List<dynamic>;
-        if (_selectedOptionIndex == questions[_currentQuestionIndex]['correctAnswerIndex']) {
-          _score++;
-        }
-      },
-      child: Container(
-        margin: const EdgeInsets.symmetric(vertical: 8.0),
-        padding: const EdgeInsets.all(16.0),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(12.0),
-          border: Border.all(
-            color: isSelected ? Colors.amber : Colors.grey.shade300,
-          ),
-          color: isSelected ? Colors.amber.withOpacity(0.3) : Colors.transparent,
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              optionText,
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-            Icon(
-              Icons.check_circle,
-              color: isSelected ? Colors.amber : Colors.grey,
+              child: Text(_isReview ? 'Finish' : 'Next Question'),
             ),
           ],
         ),
@@ -124,52 +85,59 @@ class _QuizScreenState extends State<QuizScreen> {
   }
 
   Widget _buildProgressBar(int totalQuestions) {
-    return Column(
-      children: [
-        LinearProgressIndicator(
-          value: (_currentQuestionIndex + 1) / totalQuestions,
-          backgroundColor: Colors.amber.shade100,
-          color: Colors.amber,
-        ),
-        const SizedBox(height: 16),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              '${_currentQuestionIndex + 1} / $totalQuestions',
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ],
-        ),
-      ],
+    return LinearProgressIndicator(
+      value: (_currentQuestionIndex + 1) / totalQuestions,
+      backgroundColor: Colors.grey[300],
+      color: Colors.amber,
+    );
+  }
+
+  Widget _buildOption(int index, String answer) {
+    return RadioListTile<int>(
+      title: Text(answer),
+      value: index,
+      groupValue: _selectedOptionIndex,
+      onChanged: (value) {
+        setState(() {
+          _selectedOptionIndex = value!;
+          if (index == widget.questions[_currentQuestionIndex]['correctAnswerIndex']) {
+            _score++; // Increment score if the answer is correct
+          }
+        });
+      },
+    );
+  }
+
+  void _finishQuiz() {
+    // Logic to handle quiz completion (e.g., saving score, showing results)
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Quiz Finished!'),
+        content: Text('Your score: $_score/${widget.questions.length}'),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop(); // Close dialog
+              Navigator.of(context).pop(); // Go back to previous screen
+            },
+            child: const Text('OK'),
+          ),
+        ],
+      ),
     );
   }
 
   void _nextQuestion() {
-    if (_selectedOptionIndex != -1) {
+    if (_currentQuestionIndex < widget.questions.length - 1) {
       setState(() {
-        if (_currentQuestionIndex < widget.quiz['questions'].length - 1) {
-          _currentQuestionIndex++;
-          _selectedOptionIndex = -1;
-        } else {
-          _isReview = true; // Enable review mode after the last question
-        }
+        _currentQuestionIndex++;
+        _selectedOptionIndex = -1; // Reset selected option
       });
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select an option.')),
-      );
+      setState(() {
+        _isReview = true; // Switch to review mode
+      });
     }
-  }
-
-  void _finishQuiz() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Quiz Completed! Your score: $_score/${widget.quiz['questions'].length}')),
-    );
-
-    // Optionally, navigate back or to another screen here
-    Navigator.pop(context);
   }
 }
