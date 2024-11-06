@@ -17,7 +17,7 @@ class _AiFlashcardCreationScreenState extends State<AiFlashcardCreationScreen> {
   bool _isLoading = false;
 
   Future<void> _generateContent() async {
-    final String apiKey = 'AIzaSyCdo7-KLx7OFoWxq8847FVMl3Ibq8W1TGo'; // Replace with your actual API key
+    final String apiKey = 'APIKEY'; // Replace with your actual API key
     final String promptText = _inputController.text;
 
     setState(() {
