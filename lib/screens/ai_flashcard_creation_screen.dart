@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart'; // Firestore to save flashcards and quizzes
+import 'package:firebase_auth/firebase_auth.dart'; // FirebaseAuth for user management
 
 class AiFlashcardCreationScreen extends StatefulWidget {
   const AiFlashcardCreationScreen({Key? key}) : super(key: key);
@@ -16,10 +16,8 @@ class _AiFlashcardCreationScreenState extends State<AiFlashcardCreationScreen> {
   String _result = '';
   bool _isLoading = false;
 
-
-
   Future<void> _generateContent() async {
-    final String apiKey = 'AIzaSyCdo7-KLx7OFoWxq8847FVMl3Ibq8W1TGo';
+    final String apiKey = 'AIzaSyCdo7-KLx7OFoWxq8847FVMl3Ibq8W1TGo'; // Replace with your actual API key
     final String promptText = _inputController.text;
 
     setState(() {
@@ -37,7 +35,7 @@ class _AiFlashcardCreationScreenState extends State<AiFlashcardCreationScreen> {
         'contents': [
           {
             'parts': [
-
+              {'text': promptText}, // Your input text
             ]
           }
         ],
@@ -47,12 +45,12 @@ class _AiFlashcardCreationScreenState extends State<AiFlashcardCreationScreen> {
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
 
-
+      // Log the response from the API for debugging
       print("AI Response: $data");
 
-
+      // Check if candidates exist in the response
       if (data['candidates'] != null && data['candidates'].isNotEmpty) {
-        final content = data['candidates'][0]['content'];
+        final content = data['candidates'][0]['content']; // Access the content
         if (content != null && content['parts'] != null && content['parts'].isNotEmpty) {
           final String generatedText = content['parts'][0]['text'];
 
@@ -108,7 +106,6 @@ class _AiFlashcardCreationScreenState extends State<AiFlashcardCreationScreen> {
             _result = 'No valid content generated. Please check your input.';
           });
         }
-
       } else {
         setState(() {
           _result = 'No candidates returned. Please try again.';
@@ -149,7 +146,7 @@ class _AiFlashcardCreationScreenState extends State<AiFlashcardCreationScreen> {
     List<String> questions = [];
     List<String> correctAnswers = [];
 
-
+    // Example: Separate questions from answers
     var lines = generatedText.split('\n');
     for (var line in lines) {
       if (line.startsWith('Q:')) {
